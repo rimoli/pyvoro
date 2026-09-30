@@ -1,6 +1,6 @@
 // Voro++, a 3D cell-based Voronoi library
 //
-// Author   : Chris H. Rycroft (LBL / UC Berkeley)
+// Author   : Chris H. Rycroft (Harvard University / LBL)
 // Email    : chr@alum.mit.edu
 // Date     : August 30th 2011
 
@@ -118,5 +118,15 @@ bool wall_cone::cut_cell_base(v_cell &c,double x,double y,double z) {
 	}
 	return true;
 }
+
+// Explicit instantiation
+template bool wall_sphere::cut_cell_base(voronoicell&,double,double,double);
+template bool wall_sphere::cut_cell_base(voronoicell_neighbor&,double,double,double);
+template bool wall_plane::cut_cell_base(voronoicell&,double,double,double);
+template bool wall_plane::cut_cell_base(voronoicell_neighbor&,double,double,double);
+template bool wall_cylinder::cut_cell_base(voronoicell&,double,double,double);
+template bool wall_cylinder::cut_cell_base(voronoicell_neighbor&,double,double,double);
+template bool wall_cone::cut_cell_base(voronoicell&,double,double,double);
+template bool wall_cone::cut_cell_base(voronoicell_neighbor&,double,double,double);
 
 }

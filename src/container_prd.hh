@@ -1,6 +1,6 @@
 // Voro++, a 3D cell-based Voronoi library
 //
-// Author   : Chris H. Rycroft (LBL / UC Berkeley)
+// Author   : Chris H. Rycroft (Harvard University / LBL)
 // Email    : chr@alum.mit.edu
 // Date     : August 30th 2011
 
@@ -42,6 +42,7 @@ namespace voro {
  * information about the underlying computational grid. */
 class container_periodic_base : public unitcell, public voro_base {
 	public:
+		const double max_len_sq;
 		/** The lower y index (inclusive) of the primary domain within
 		 * the block structure. */
 		int ey;
@@ -302,7 +303,7 @@ class container_periodic : public container_periodic_base, public radius_mono {
 		 * \param[in] fp a file handle to write to. */
 		template<class c_loop>
 		void draw_cells_gnuplot(c_loop &vl,FILE *fp) {
-			voronoicell c;double *pp;
+			voronoicell c(*this);double *pp;
 			if(vl.start()) do if(compute_cell(c,vl)) {
 				pp=p[vl.ijk]+ps*vl.q;
 				c.draw_gnuplot(*pp,pp[1],pp[2],fp);
@@ -329,7 +330,7 @@ class container_periodic : public container_periodic_base, public radius_mono {
 		 * \param[in] fp a file handle to write to. */
 		template<class c_loop>
 		void draw_cells_pov(c_loop &vl,FILE *fp) {
-			voronoicell c;double *pp;
+			voronoicell c(*this);double *pp;
 			if(vl.start()) do if(compute_cell(c,vl)) {
 				fprintf(fp,"// cell %d\n",id[vl.ijk][vl.q]);
 				pp=p[vl.ijk]+ps*vl.q;
@@ -360,13 +361,13 @@ class container_periodic : public container_periodic_base, public radius_mono {
 		void print_custom(c_loop &vl,const char *format,FILE *fp) {
 			int ijk,q;double *pp;
 			if(contains_neighbor(format)) {
-				voronoicell_neighbor c;
+				voronoicell_neighbor c(*this);
 				if(vl.start()) do if(compute_cell(c,vl)) {
 					ijk=vl.ijk;q=vl.q;pp=p[ijk]+ps*q;
 					c.output_custom(format,id[ijk][q],*pp,pp[1],pp[2],default_radius,fp);
 				} while(vl.inc());
 			} else {
-				voronoicell c;
+				voronoicell c(*this);
 				if(vl.start()) do if(compute_cell(c,vl)) {
 					ijk=vl.ijk;q=vl.q;pp=p[ijk]+ps*q;
 					c.output_custom(format,id[ijk][q],*pp,pp[1],pp[2],default_radius,fp);
@@ -400,6 +401,24 @@ class container_periodic : public container_periodic_base, public radius_mono {
 		inline bool compute_cell(v_cell &c,int ijk,int q) {
 			int k(ijk/(nx*oy)),ijkt(ijk-(nx*oy)*k),j(ijkt/nx),i(ijkt-j*nx);
 			return vc.compute_cell(c,ijk,q,i,j,k);
+		}
+		/** Computes the Voronoi cell for a ghost particle at a given
+		 * location.
+		 * \param[out] c a Voronoi cell class in which to store the
+		 * 		 computed cell.
+		 * \param[in] (x,y,z) the location of the ghost particle.
+		 * \return True if the cell was computed. If the cell cannot be
+		 * computed, if it is removed entirely by a wall or boundary
+		 * condition, then the routine returns false. */
+		template<class v_cell>
+		inline bool compute_ghost_cell(v_cell &c,double x,double y,double z) {
+			int ijk;
+			put_locate_block(ijk,x,y,z);
+			double *pp=p[ijk]+3*co[ijk]++;
+			*(pp++)=x;*(pp++)=y;*(pp++)=z;
+			bool q=compute_cell(c,ijk,co[ijk]-1);
+			co[ijk]--;
+			return q;
 		}
 	private:
 		voro_compute<container_periodic> vc;
@@ -507,7 +526,7 @@ class container_periodic_poly : public container_periodic_base, public radius_po
 		 * \param[in] fp a file handle to write to. */
 		template<class c_loop>
 		void draw_cells_gnuplot(c_loop &vl,FILE *fp) {
-			voronoicell c;double *pp;
+			voronoicell c(*this);double *pp;
 			if(vl.start()) do if(compute_cell(c,vl)) {
 				pp=p[vl.ijk]+ps*vl.q;
 				c.draw_gnuplot(*pp,pp[1],pp[2],fp);
@@ -534,7 +553,7 @@ class container_periodic_poly : public container_periodic_base, public radius_po
 		 * \param[in] fp a file handle to write to. */
 		template<class c_loop>
 		void draw_cells_pov(c_loop &vl,FILE *fp) {
-			voronoicell c;double *pp;
+			voronoicell c(*this);double *pp;
 			if(vl.start()) do if(compute_cell(c,vl)) {
 				fprintf(fp,"// cell %d\n",id[vl.ijk][vl.q]);
 				pp=p[vl.ijk]+ps*vl.q;
@@ -565,13 +584,13 @@ class container_periodic_poly : public container_periodic_base, public radius_po
 		void print_custom(c_loop &vl,const char *format,FILE *fp) {
 			int ijk,q;double *pp;
 			if(contains_neighbor(format)) {
-				voronoicell_neighbor c;
+				voronoicell_neighbor c(*this);
 				if(vl.start()) do if(compute_cell(c,vl)) {
 					ijk=vl.ijk;q=vl.q;pp=p[ijk]+ps*q;
 					c.output_custom(format,id[ijk][q],*pp,pp[1],pp[2],pp[3],fp);
 				} while(vl.inc());
 			} else {
-				voronoicell c;
+				voronoicell c(*this);
 				if(vl.start()) do if(compute_cell(c,vl)) {
 					ijk=vl.ijk;q=vl.q;pp=p[ijk]+ps*q;
 					c.output_custom(format,id[ijk][q],*pp,pp[1],pp[2],pp[3],fp);
@@ -602,6 +621,26 @@ class container_periodic_poly : public container_periodic_base, public radius_po
 		inline bool compute_cell(v_cell &c,int ijk,int q) {
 			int k(ijk/(nx*oy)),ijkt(ijk-(nx*oy)*k),j(ijkt/nx),i(ijkt-j*nx);
 			return vc.compute_cell(c,ijk,q,i,j,k);
+		}
+		/** Computes the Voronoi cell for a ghost particle at a given
+		 * location.
+		 * \param[out] c a Voronoi cell class in which to store the
+		 * 		 computed cell.
+		 * \param[in] (x,y,z) the location of the ghost particle.
+		 * \param[in] r the radius of the ghost particle.
+		 * \return True if the cell was computed. If the cell cannot be
+		 * computed, if it is removed entirely by a wall or boundary
+		 * condition, then the routine returns false. */
+		template<class v_cell>
+		inline bool compute_ghost_cell(v_cell &c,double x,double y,double z,double r) {
+			int ijk;
+			put_locate_block(ijk,x,y,z);
+			double *pp=p[ijk]+4*co[ijk]++,tm=max_radius;
+			*(pp++)=x;*(pp++)=y;*(pp++)=z;*pp=r;
+			if(r>max_radius) max_radius=r;
+			bool q=compute_cell(c,ijk,co[ijk]-1);
+			co[ijk]--;max_radius=tm;
+			return q;
 		}
 		void print_custom(const char *format,FILE *fp=stdout);
 		void print_custom(const char *format,const char *filename);
