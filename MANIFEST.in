@@ -7,3 +7,4 @@ include pyvoro/vpp.h
 include pyvoro/vpp.cpp
 recursive-include src *.cc *.hh
 exclude pyvoro/voroplusplus.cpp
+recursive-include tests *.py
