@@ -1,61 +1,81 @@
-pyvoro
-======
+pyvoro-rimoli
+=============
 
-3D Voronoi tessellations: a python entry point for the [voro++ library](http://math.lbl.gov/voro++/)
+2D and 3D Voronoi and radical (Laguerre) tessellations in Python, with the
+current [Voro++](https://github.com/chr1shr/voro).
 
-**Recently Added Features:**
+This is a maintained fork of [pyvoro](https://github.com/joe-jordan/pyvoro),
+by way of [pyvoro-mmalahe](https://github.com/mmalahe/pyvoro). The Python
+interface is unchanged: the package is still imported as `pyvoro`, and code
+written for pyvoro works as before. What changes is the bundled Voro++, which
+was version 0.4.6 (2013) and is now the current upstream version.
 
-*Released on PyPI* - thanks to a contribution from @ansobolev, you can now install the project with
-`pip` - just type `pip install pyvoro`, with sudo if that's your thing.
+Why this fork
+-------------
 
-*support for numpy arrays* - thanks to a contribution from @christopherpoole, you can now pass in
-a 2D (Nx3 or Nx2) numpy array.
+Voro++ 0.4.6 has a bug in the radical tessellation: in some configurations a
+cell is returned uncut, and the cells overlap instead of partitioning the
+domain. Four discs of radius 0.1 at the quarter points of a unit square, for
+example, must give four cells of area 0.25:
 
-*2D helper*, which translates the results of a 3D tesselation of points on the plane back into
-2D vectors and cells (see below for an example.)
+```python
+import pyvoro
+cells = pyvoro.compute_2d_voronoi(
+    [[0.25, 0.25], [0.75, 0.25], [0.25, 0.75], [0.75, 0.75]],
+    [[0.0, 1.0], [0.0, 1.0]], 0.5, radii=[0.1] * 4)
+print([c['volume'] for c in cells])
+# Voro++ 0.4.6:  [1.0, 1.0, 1.0, 1.0]
+# this fork:     [0.25, 0.25, 0.25, 0.25]
+```
 
-*Radical (weighted) option*, which weights the voronoi cell sizes according to a set of supplied
-radius values.
-
-*periodic boundary support*, note that each cell is returned in the frame of reference of its source
-point, so points can (and will) be outside the bounding box.
+The bug was fixed upstream in February 2026 (Voro++ commits 04fecfa and
+b0dac57), and this fork bundles Voro++ at commit b0dac57. The fork was made
+for [MicroStructPy](https://github.com/kip-hart/MicroStructPy), whose
+microstructures are radical tessellations, but it can replace pyvoro in any
+project.
 
 Installation
 ------------
 
-Recommended - installation via `pip`:
+    pip install pyvoro-rimoli
 
-    pip install pyvoro
+Wheels are provided for Linux (x86_64 and aarch64), macOS (Intel and Apple
+silicon) and Windows (x86_64), for Python 3.9 to 3.14. On other platforms,
+pip builds the package from source, which needs a C++ compiler.
 
-Installation from source is the same as for any other python module. Issuing 
-  
-    python setup.py install
-    
-will install pyvoro system-wide, while 
+pyvoro, pyvoro-mmalahe and pyvoro-rimoli all install the same `pyvoro`
+module, so only one of them should be installed. To switch:
 
-    python setup.py install --user
+    pip uninstall pyvoro pyvoro-mmalahe
+    pip install pyvoro-rimoli
 
-will install it only for the current user. Any 
-[other](https://pythonhosted.org/an_example_pypi_project/setuptools.html#using-setup-py)  `setup.py` keywords 
-can also be used, including 
- 
-    python setup.py develop
-    
-to install the package in 'development' mode. Alternatively, if you want all the dependencies pulled in automatically,  
-you can still use `pip`:
+To install from a clone of this repository and run the tests:
 
-    pip install -e .
+    pip install . pytest
+    pytest tests
 
-`-e` option makes pip install package from source in development mode. 
+Usage
+-----
 
-You can then use the code with:
+```python
+import pyvoro
+pyvoro.compute_voronoi( ... )
+pyvoro.compute_2d_voronoi( ... )
+```
 
-    import pyvoro
-    pyvoro.compute_voronoi( ... )
-    pyvoro.compute_2d_voronoi( ... )
+Features:
 
-Example:
---------
+* *Radical (weighted) option*, which weights the Voronoi cell sizes according
+  to a set of supplied radius values.
+* *Periodic boundary support*. Note that each cell is returned in the frame of
+  reference of its source point, so points can (and will) be outside the
+  bounding box.
+* *2D helper*, which translates the results of a 3D tessellation of points on
+  the plane back into 2D vectors and cells (see below for an example).
+* *Support for numpy arrays* (thanks to a contribution from
+  @christopherpoole): you can pass in a 2D (Nx3 or Nx2) numpy array.
+
+### Example
 
 ```python
 import pyvoro
@@ -73,7 +93,7 @@ returning an array of voronoi cells in the form:
 { # (note, this cell is not calculated using the above example)
   'volume': 6.07031902214448,
   'faces': [
-    {'adjacent_cell': 1, 'vertices': [1, 5, 8, 3]}, 
+    {'adjacent_cell': 1, 'vertices': [1, 5, 8, 3]},
     {'adjacent_cell': -3, 'vertices': [1, 0, 2, 6, 5]},
     {'adjacent_cell': -5, 'vertices': [1, 3, 9, 7, 0]},
     {'adjacent_cell': 146, 'vertices': [2, 4, 11, 10, 6]},
@@ -121,14 +141,10 @@ there are three at the corner of a box, specifically ids `1`, `3` and `5`, (the
 `x_i = 0` boundaries, represented with negative ids hence `-1`, `-3` and `-5` --
 this is voro++'s conventional way of referring to boundary interfaces.)
 
-Initially only non-radical tessellation, and computing *all* information 
-(including cell adjacency). Other code paths may be added later.
+### 2D tessellation
 
-2D tessellation
----------------
-
-You can now run a simpler function to get the 2D cells around your points, with all the details
-handled for you:
+You can run a simpler function to get the 2D cells around your points, with
+all the details handled for you:
 
 ```python
 import pyvoro
@@ -140,7 +156,7 @@ cells = pyvoro.compute_2d_voronoi(
 )
 ```
 
-the output follows the same schema as the 3D for now, since this is not as annoying as having a 
+the output follows the same schema as the 3D for now, since this is not as annoying as having a
 whole new schema to handle. The adjacency is now a bit redundant since the cell is a polygon and the
 vertices are returned in the correct order. The cells look like a list of these:
 
@@ -177,6 +193,49 @@ vertices are returned in the correct order. The cells look like a list of these:
 
 *(note that the edges will now be indexed -1 to -4, and the 'volume' key is in fact the area.)*
 
-NOTES:
-* on compilation: if a cython .pyx file is being compiled in C++ mode, all cython-visible code must be compiled "as c++" - this will not be compatible with any C functions declared `extern "C" { ... }`. In this library, the author just used c++ functions for everything, in order to be able to utilise the c++ `std::vector<T>` classes to represent the (ridiculously non-specific) geometry of a Voronoi cell.
-* A checkout of voro++ itself is included in this project. moving `setup.py` and the `pyvoro` folder into a newer checkout of the voro++ source may well also work, but if any of the definitions used are changed then it will fail to compile. by all means open a support issue if you need this library to work with a newer version of voro++; better still fix it and send me a pull request :)
+Note on compilation: if a cython .pyx file is being compiled in C++ mode, all
+cython-visible code must be compiled "as c++" - this will not be compatible
+with any C functions declared `extern "C" { ... }`. In this library, the author
+just used c++ functions for everything, in order to be able to utilise the c++
+`std::vector<T>` classes to represent the (ridiculously non-specific) geometry
+of a Voronoi cell.
+
+Releasing
+---------
+
+1. Update the version in `pyproject.toml` and the list of changes in
+   `CHANGELOG.md`, commit, and push. The Wheels workflow builds and tests the
+   wheels on every push.
+2. On GitHub, publish a release with the tag `vX.Y.Z`. The Wheels workflow
+   builds and tests the wheels and the source distribution again, and uploads
+   them to PyPI.
+
+The upload uses PyPI's
+[trusted publishing](https://docs.pypi.org/trusted-publishers/), so no token
+is stored in the repository. It needs a one-time setup by the owner of the
+PyPI account: in *Your account > Publishing*, add a pending publisher for a
+GitHub repository with
+
+* PyPI project name: `pyvoro-rimoli`
+* owner: `rimoli`, repository name: `pyvoro`
+* workflow name: `wheels.yml`
+* environment name: `pypi`
+
+The first release then creates the project on PyPI.
+
+License
+-------
+
+pyvoro is an extension of Voro++ and is released under the same modified BSD
+license (see `LICENSE`). Voro++ Copyright (c) 2008, The Regents of the
+University of California, through Lawrence Berkeley National Laboratory.
+
+Credits
+-------
+
+* Voro++: Chris H. Rycroft.
+* pyvoro: Joe Jordan, with contributions from Andrey Sobolev, Christopher
+  Poole and Wendell Smith.
+* pyvoro-mmalahe (Python 3 packaging): Michael Malahe, with a contribution
+  from Oromion.
+* pyvoro-rimoli (current Voro++, wheels, tests): Julian Rimoli.
