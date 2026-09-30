@@ -1,20 +1,23 @@
-# 
+#
 # setup.py : pyvoro python interface to voro++
-# 
+#
 # this extension to voro++ is released under the original modified BSD license
 # and constitutes an Extension to the original project.
 #
 # Copyright (c) Joe Jordan 2012
 # contact: <joe.jordan@imperial.ac.uk> or <tehwalrus@h2j9k.org>
 #
+# The package metadata is in pyproject.toml; this file only describes the
+# extension module. The Cython wrapper is compiled at build time, so that
+# the generated C++ code always matches the Python version it is built for.
+#
 
-import setuptools
-from setuptools import setup, Extension
+from Cython.Build import cythonize
+from setuptools import Extension, setup
 
-# fall back to provided cpp file if Cython is not found
 extensions = [
     Extension("pyvoro.voroplusplus",
-              sources=["pyvoro/voroplusplus.cpp",
+              sources=["pyvoro/voroplusplus.pyx",
                        "pyvoro/vpp.cpp",
                        "src/voro++.cc"],
               include_dirs=["src"],
@@ -22,27 +25,5 @@ extensions = [
               )
 ]
 
-setup(
-    name="pyvoro-mmalahe",
-    version="1.3.4",
-    description="2D and 3D Voronoi tessellations: a python entry point for the voro++ library.",
-    author="Joe Jordan",
-    author_email="joe.jordan@imperial.ac.uk",
-    url="https://github.com/mmalahe/pyvoro",
-    #download_url="https://github.com/joe-jordan/pyvoro/tarball/v1.3.4",
-    packages=["pyvoro",],
-    package_dir={"pyvoro": "pyvoro"},
-    ext_modules=extensions,
-    keywords=["geometry", "mathematics", "Voronoi"],
-    classifiers=[
-        "Development Status :: 5 - Production/Stable",
-        "Topic :: Scientific/Engineering :: Mathematics",
-        "Topic :: Scientific/Engineering :: Physics",
-        "Intended Audience :: Science/Research",
-        "Operating System :: POSIX :: Linux",
-        "Programming Language :: Python :: 3",
-        "Programming Language :: Python :: 3.11",
-        "License :: OSI Approved :: BSD License",
-    ],
-    test_suite="test",
-)
+setup(ext_modules=cythonize(extensions,
+                            compiler_directives={"language_level": 3}))

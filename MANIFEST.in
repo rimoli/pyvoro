@@ -1,5 +1,9 @@
-include LICENSE.txt
-include original-README
+include LICENSE
 include README.md
+include NEWS
+include original-README
+include pyvoro/voroplusplus.pyx
+include pyvoro/vpp.h
+include pyvoro/vpp.cpp
 recursive-include src *.cc *.hh
-recursive-include pyvoro *.py *.cpp *.h
+exclude pyvoro/voroplusplus.cpp
