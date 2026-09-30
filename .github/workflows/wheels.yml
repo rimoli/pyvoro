@@ -1,0 +1,88 @@
+# Build and test the wheels and the source distribution on every push and
+# pull request, and publish them to PyPI when a release is published on
+# GitHub.
+#
+# Publishing uses PyPI's trusted publishing, so no token is stored in the
+# repository. It needs a one-time setup on pypi.org, described in the
+# README ("Releasing").
+
+name: Wheels
+
+on:
+  push:
+    branches: [master]
+  pull_request:
+    branches: [master]
+  release:
+    types: [published]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  wheels:
+    name: wheels on ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os:
+          - ubuntu-latest     # Linux x86_64
+          - ubuntu-24.04-arm  # Linux aarch64
+          - windows-latest    # Windows x86_64
+          - macos-15-intel    # macOS x86_64
+          - macos-latest      # macOS arm64
+
+    steps:
+    - uses: actions/checkout@v7
+    - name: Build and test the wheels
+      # the Python versions, architectures and test command are set in
+      # pyproject.toml, [tool.cibuildwheel]
+      uses: pypa/cibuildwheel@v4.2.1
+    - uses: actions/upload-artifact@v7
+      with:
+        name: wheels-${{ matrix.os }}
+        path: wheelhouse/*.whl
+
+  sdist:
+    name: source distribution
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v7
+    - uses: actions/setup-python@v7
+      with:
+        python-version: '3.x'
+    - name: Build and check the source distribution
+      run: |
+        python -m pip install --upgrade pip build twine
+        python -m build --sdist
+        twine check --strict dist/*
+    - name: Install it and run the tests
+      run: |
+        python -m pip install dist/*.tar.gz pytest
+        cd "$RUNNER_TEMP"
+        python -m pytest "$GITHUB_WORKSPACE/tests"
+    - uses: actions/upload-artifact@v7
+      with:
+        name: sdist
+        path: dist/*.tar.gz
+
+  publish:
+    name: publish to PyPI
+    if: github.event_name == 'release' && github.event.action == 'published'
+    needs: [wheels, sdist]
+    runs-on: ubuntu-latest
+    environment:
+      name: pypi
+      url: https://pypi.org/p/pyvoro-rimoli
+    permissions:
+      id-token: write  # for trusted publishing
+
+    steps:
+    - uses: actions/download-artifact@v8
+      with:
+        path: dist
+        merge-multiple: true
+    - uses: pypa/gh-action-pypi-publish@release/v1
