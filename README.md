@@ -13,10 +13,14 @@ was version 0.4.6 (2013) and is now the current upstream version.
 Why this fork
 -------------
 
-Voro++ 0.4.6 has a bug in the radical tessellation: in some configurations a
-cell is returned uncut, and the cells overlap instead of partitioning the
-domain. Four discs of radius 0.1 at the quarter points of a unit square, for
-example, must give four cells of area 0.25:
+Voro++ 0.4.6 decides whether the particles of a neighboring block can cut a
+cell with tests that compare against square roots. When the compiler fuses
+multiply-adds, as Apple clang does by default on Apple silicon, those tests
+can wrongly conclude that no particle cuts the cell. The cell is then
+returned uncut, and the cells overlap instead of partitioning the domain.
+pip compiles pyvoro and pyvoro-mmalahe from source on macOS, so Mac users
+get this build. Four discs of radius 0.1 at the quarter points of a unit
+square, for example, must give four cells of area 0.25:
 
 ```python
 import pyvoro
@@ -24,12 +28,14 @@ cells = pyvoro.compute_2d_voronoi(
     [[0.25, 0.25], [0.75, 0.25], [0.25, 0.75], [0.75, 0.75]],
     [[0.0, 1.0], [0.0, 1.0]], 0.5, radii=[0.1] * 4)
 print([c['volume'] for c in cells])
-# Voro++ 0.4.6:  [1.0, 1.0, 1.0, 1.0]
-# this fork:     [0.25, 0.25, 0.25, 0.25]
+# Voro++ 0.4.6, Apple clang on Apple silicon:  [1.0, 1.0, 1.0, 1.0]
+# Voro++ 0.4.6 without fused multiply-adds:    [0.25, 0.25, 0.25, 0.25]
+# this fork, with any compiler:                [0.25, 0.25, 0.25, 0.25]
 ```
 
-The bug was fixed upstream in February 2026 (Voro++ commits 04fecfa and
-b0dac57), and this fork bundles Voro++ at commit b0dac57. The fork was made
+Upstream rewrote those tests in February 2026 (Voro++ commits 04fecfa and
+b0dac57), so that they no longer depend on how the compiler evaluates them,
+and this fork bundles Voro++ at commit b0dac57. The fork was made
 for [MicroStructPy](https://github.com/kip-hart/MicroStructPy), whose
 microstructures are radical tessellations, but it can replace pyvoro in any
 project.
@@ -209,6 +215,11 @@ Releasing
 2. On GitHub, publish a release with the tag `vX.Y.Z`. The Wheels workflow
    builds and tests the wheels and the source distribution again, and uploads
    them to PyPI.
+
+The tests include reference tessellations, stored in
+`tests/reference_tessellations.json`, so that an update of Voro++ cannot
+change the results unnoticed. If an update is meant to change them, check the
+new tessellations and store them with `python tests/make_reference.py`.
 
 The upload uses PyPI's
 [trusted publishing](https://docs.pypi.org/trusted-publishers/), so no token

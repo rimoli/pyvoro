@@ -1,9 +1,11 @@
 """Regression tests for the radical (Laguerre) tessellation.
 
 Voro++ 0.4.6 could return a radical Voronoi cell uncut, so that the cells
-overlapped instead of partitioning the domain. With that version, the
-four-disc test and 16 of the 40 random cases fail; with the current
-Voro++, all of them pass.
+overlapped instead of partitioning the domain, when its compiler fuses
+multiply-adds. With that version built by Apple clang on Apple silicon,
+which does so by default, the four-disc test and 16 of the 40 random cases
+fail. Built without fused multiply-adds, it passes them. The current Voro++
+passes them with either build.
 
 The random configurations use non-overlapping discs and spheres, so that
 every particle has a non-empty cell. The cells must then partition the

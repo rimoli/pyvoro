@@ -1,6 +1,20 @@
 Changelog
 =========
 
+1.4.1
+-----
+
+* The package metadata names its maintainer with an email address, not only
+  the author of the original pyvoro.
+* Reference tessellations: the tests compare the volumes and the neighbors of
+  the cells of four fixed configurations, bounded and periodic, in 2D and 3D,
+  with stored values, so that an update of Voro++ cannot change the results
+  unnoticed.
+* The README and the tests say on which builds the bug of Voro++ 0.4.6
+  appears: those whose compiler fuses multiply-adds, such as Apple clang on
+  Apple silicon. Built without fused multiply-adds, Voro++ 0.4.6 gives the
+  right cells for the cases in the tests.
+
 1.4.0
 -----
 

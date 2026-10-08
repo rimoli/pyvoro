@@ -4,14 +4,14 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "pyvoro-rimoli"
-version = "1.4.0"
+version = "1.4.1"
 description = "2D and 3D Voronoi tessellations: a Python entry point for the Voro++ library, built with the current Voro++."
 readme = "README.md"
 requires-python = ">=3.9"
 license = "BSD-3-Clause-LBNL"
 license-files = ["LICENSE"]
 authors = [{ name = "Joe Jordan", email = "joe.jordan@imperial.ac.uk" }]
-maintainers = [{ name = "Julian Rimoli" }]
+maintainers = [{ name = "Julian Rimoli", email = "julian.rimoli@gmail.com" }]
 keywords = ["geometry", "mathematics", "Voronoi", "Laguerre", "radical tessellation"]
 classifiers = [
     "Development Status :: 5 - Production/Stable",
